@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>毛泽东思想题库测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        .quiz-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .question-number {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .question {
+            font-size: 18px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .option {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option:hover {
+            background-color: #f5f5f5;
+        }
+        .option.selected {
+            background-color: #e6f7ff;
+            border-color: #1890ff;
+        }
+        .option.correct {
+            background-color: #f6ffed;
+            border-color: #52c41a;
+        }
+        .option.wrong {
+            background-color: #fff2f0;
+            border-color: #ff4d4f;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .submit-btn {
+            background-color: #1890ff;
+            color: white;
+        }
+        .submit-btn:hover {
+            background-color: #40a9ff;
+        }
+        .submit-btn:disabled {
+            background-color: #d9d9d9;
+            cursor: not-allowed;
+        }
+        .nav-btn {
+            background-color: #f5f5f5;
+        }
+        .nav-btn:hover {
+            background-color: #e6e6e6;
+        }
+        .nav-btn:disabled {
+            color: #bfbfbf;
+            cursor: not-allowed;
+        }
+        .feedback {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .correct-feedback {
+            background-color: #f6ffed;
+            border: 1px solid #b7eb8f;
+            color: #52c41a;
+        }
+        .wrong-feedback {
+            background-color: #fff2f0;
+            border: 1px solid #ffccc7;
+            color: #ff4d4f;
+        }
+        .correct-answer {
+            font-weight: bold;
+            color: #52c41a;
+        }
+        .score-display {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 16px;
+            color: #666;
+        }
+        .progress-bar {
+            height: 6px;
+            background-color: #e8e8e8;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            background-color: #1890ff;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar">
+        <div class="progress" id="progress"></div>
+    </div>
+    
+    <div class="quiz-container">
+        <div class="question-number" id="question-number">第1题/共4题</div>
+        <div class="question" id="question"></div>
+        
+        <div class="options" id="options">
+            <!-- 选项将通过JavaScript动态生成 -->
+        </div>
+        
+        <div class="feedback correct-feedback">
+            回答正确！
+        </div>
+        <div class="feedback wrong-feedback">
+            回答错误！正确答案是：<span class="correct-answer" id="correct-answer"></span>
+        </div>
+        
+        <div class="controls">
+            <button class="nav-btn prev-btn" id="prev-btn" disabled>上一题</button>
+            <button class="submit-btn" id="submit-btn">提交答案</button>
+            <button class="nav-btn next-btn" id="next-btn">下一题</button>
+        </div>
+    </div>
+
+    <div class="score-display" id="score-display">得分: 0/0</div>
+
+    <script>
+        // 题库数据
+        const questionBank = [
+            {
+                question: "1. 毛泽东思想形成的时代条件是（ ）",
+                options: [
+                    "A. 中国沦为半殖民地半封建社会",
+                    "B. 十月革命开辟的世界无产阶级革命新时代",
+                    "C. 第一次世界大战的爆发",
+                    "D. 中国工人阶级的成长壮大"
+                ],
+                correctAnswer: "B"
+            },
+            {
+                question: "2. 在中国共产党的历史上第一次提出毛泽东思想这个概念的是（ ）",
+                options: [
+                    "A. 刘少奇",
+                    "B. 朱德",
+                    "C. 邓小平",
+                    "D. 王稼祥"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                question: "3. 中国工人阶级以独立的姿态登上政治舞台是在（ ）",
+                options: [
+                    "A. 辛亥革命中",
+                    "B. 新文化运动中",
+                    "C. 五四运动中",
+                    "D. 国民革命运动中"
+                ],
+                correctAnswer: "C"
+            },
+            {
+                question: "4. 中国共产党人第一篇反对教条主义的重要文献是（ ）",
+                options: [
+                    "A. 《中国的红色政权为什么能够存在？》",
+                    "B. 《井冈山的斗争》",
+                    "C. 《星星之火，可以燎原》",
+                    "D. 《反对本木主义》"
+                ],
+                correctAnswer: "D"
+            }
+        ];
+
+        // DOM元素
+        const questionElement = document.getElementById('question');
+        const optionsElement = document.getElementById('options');
+        const submitBtn = document.getElementById('submit-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const correctFeedback = document.querySelector('.correct-feedback');
+        const wrongFeedback = document.querySelector('.wrong-feedback');
+        const correctAnswerElement = document.getElementById('correct-answer');
+        const questionNumberElement = document.getElementById('question-number');
+        const scoreDisplayElement = document.getElementById('score-display');
+        const progressElement = document.getElementById('progress');
+        
+        // 状态变量
+        let currentQuestionIndex = 0;
+        let selectedOption = null;
+        let answerSubmitted = false;
+        let score = 0;
+        let answeredQuestions = 0;
+
+        // 初始化
+        loadQuestion(currentQuestionIndex);
+        updateProgress();
+        updateScoreDisplay();
+
+        // 加载题目
+        function loadQuestion(index) {
+            const question = questionBank[index];
+            questionElement.textContent = question.question;
+            
+            // 清空选项
+            optionsElement.innerHTML = '';
+            
+            // 添加新选项
+            question.options.forEach(option => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.textContent = option;
+                optionElement.dataset.value = option.charAt(0);
+                optionElement.addEventListener('click', selectOption);
+                optionsElement.appendChild(optionElement);
+            });
+            
+            // 重置状态
+            resetQuestionState();
+            
+            // 更新题目编号
+            questionNumberElement.textContent = `第${index + 1}题/共${questionBank.length}题`;
+            
+            // 更新导航按钮状态
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === questionBank.length - 1;
+        }
+
+        // 选择选项
+        function selectOption() {
+            if (answerSubmitted) return;
+            
+            // 移除之前选中的样式
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // 添加新选中的样式
+            this.classList.add('selected');
+            selectedOption = this.dataset.value;
+        }
+
+        // 提交答案
+        submitBtn.addEventListener('click', submitAnswer);
+        
+        function submitAnswer() {
+            if (!selectedOption) {
+                alert('请选择一个选项');
+                return;
+            }
+            
+            answerSubmitted = true;
+            answeredQuestions++;
+            
+            const currentQuestion = questionBank[currentQuestionIndex];
+            const isCorrect = selectedOption === currentQuestion.correctAnswer;
+            
+            // 更新得分
+            if (isCorrect) {
+                score++;
+            }
+            updateScoreDisplay();
+            
+            // 显示正确答案
+            document.querySelectorAll('.option').forEach(option => {
+                if (option.dataset.value === currentQuestion.correctAnswer) {
+                    option.classList.add('correct');
+                }
+                if (option.dataset.value === selectedOption && !option.classList.contains('correct')) {
+                    option.classList.add('wrong');
+                }
+            });
+            
+            // 显示反馈
+            if (isCorrect) {
+                correctFeedback.style.display = 'block';
+            } else {
+                wrongFeedback.style.display = 'block';
+                correctAnswerElement.textContent = currentQuestion.options.find(
+                    opt => opt.charAt(0) === currentQuestion.correctAnswer
+                );
+            }
+            
+            // 禁用选项选择
+            document.querySelectorAll('.option').forEach(option => {
+                option.style.cursor = 'default';
+            });
+            
+            // 改变提交按钮状态
+            submitBtn.disabled = true;
+            
+            // 更新进度条
+            updateProgress();
+        }
+
+        // 上下题切换
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion(currentQuestionIndex);
+            }
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questionBank.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion(currentQuestionIndex);
+            }
+        });
+
+        // 重置题目状态
+        function resetQuestionState() {
+            document.querySelectorAll('.option').forEach(option => {
+                option.classList.remove('selected', 'correct', 'wrong');
+                option.style.cursor = 'pointer';
+            });
+            correctFeedback.style.display = 'none';
+            wrongFeedback.style.display = 'none';
+            selectedOption = null;
+            answerSubmitted = false;
+            submitBtn.disabled = false;
+        }
+
+        // 更新得分显示
+        function updateScoreDisplay() {
+            scoreDisplayElement.textContent = `得分: ${score}/${answeredQuestions}`;
+        }
+
+        // 更新进度条
+        function updateProgress() {
+            const progress = (answeredQuestions / questionBank.length) * 100;
+            progressElement.style.width = `${progress}%`;
+        }
+    </script>
+</body>
+</html>
