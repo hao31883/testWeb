@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错题集</title>
+    <style>
+       
+    /* 添加按钮样式 */
+    .navigation-btns {
+        margin: 30px 0;
+        text-align: center;
+    }
+
+    .return-btn {
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #1890ff;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 16px;
+        transition: all 0.3s;
+        border: 1px solid transparent;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .return-btn:hover {
+        background-color: #40a9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .return-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .wrong-container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .wrong-item {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ffe58f;
+            border-radius: 4px;
+            background: #fffbe6;
+        }
+        .question {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .option {
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .correct {
+            background: #f6ffed;
+            border-color: #52c41a;
+        }
+        .wrong {
+            background: #fff2f0;
+            border-color: #ff4d4f;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .remove-btn {
+            background: #ff4d4f;
+            color: white;
+        }
+        .back-btn {
+            background: #1890ff;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="wrong-container">
+        <h1>错题集（共<span id="count">0</span>题）</h1>
+        <div id="wrong-list"></div>
+     <div class="navigation-btns"><a href="test.html" class="return-btn">返回练习</a>
+
+</div>
+    </div>
+
+    <script>
+        // 加载错题
+        function loadWrongQuestions() {
+            const wrongList = JSON.parse(localStorage.getItem('wrongQuestions') || []);
+            const container = document.getElementById('wrong-list');
+            document.getElementById('count').textContent = wrongList.length;
+
+            container.innerHTML = wrongList.map((q, index) => `
+                <div class="wrong-item" data-id="${q.id}">
+                    <div class="question">${index + 1}. ${q.question}</div>
+                    ${q.options.map(opt => `
+                        <div class="option 
+                            ${opt.startsWith(q.correctAnswer) ? 'correct' : ''}
+                            ${opt.startsWith(userAnswer(q)) ? 'wrong' : ''}">
+                            ${opt}
+                            ${opt.startsWith(q.correctAnswer) ? '<span style="color:#52c41a">（正确答案）</span>' : ''}
+                        </div>
+                    `).join('')}
+                    <div class="controls">
+                        <button class="remove-btn" onclick="removeQuestion('${q.id}')">移除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 获取用户原答案
+        function userAnswer(question) {
+            return question.userAnswer || '';
+        }
+
+        // 移除错题
+        window.removeQuestion = (id) => {
+            let wrongList = JSON.parse(localStorage.getItem('wrongQuestions') || []);
+            wrongList = wrongList.filter(q => q.id != id);
+            localStorage.setItem('wrongQuestions', JSON.stringify(wrongList));
+            loadWrongQuestions();
+        }
+
+        // 初始化加载
+        loadWrongQuestions();
+    </script>
+</body>
+</html>

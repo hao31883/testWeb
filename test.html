@@ -20,11 +20,14 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             position: relative;
         }
-        .question-number {
-            color: #666;
-            margin-bottom: 10px;
+        .question-header {
             display: flex;
             justify-content: space-between;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .question-number {
+            color: #666;
         }
         .question {
             font-size: 18px;
@@ -57,10 +60,18 @@
             background-color: #fff2f0;
             border-color: #ff4d4f;
         }
+        .option.correct-answer {
+            background-color: #f6ffed;
+            border-color: #52c41a;
+        }
         .controls {
             display: flex;
             justify-content: space-between;
             margin-top: 20px;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
         }
         button {
             padding: 8px 16px;
@@ -80,41 +91,29 @@
             color: #bfbfbf;
             cursor: not-allowed;
         }
-        .finish-btn {
-            background-color: #52c41a;
-            color: white;
-        }
-        .finish-btn:hover {
-            background-color: #73d13d;
-        }
         .restart-btn {
             background-color: #ff4d4f;
             color: white;
-            position: absolute;
-            top: 20px;
-            right: 20px;
         }
         .restart-btn:hover {
             background-color: #ff7875;
+        }
+        .add-wrong-btn {
+            background-color: #ffa940;
+            color: white;
+            position: absolute;
+            right: 15px;
+            bottom: 15px;
+            display: none;
+        }
+        .add-wrong-btn:hover {
+            background-color: #ffc069;
         }
         .score-display {
             text-align: center;
             margin-top: 20px;
             font-size: 16px;
             color: #666;
-        }
-        .progress-bar {
-            height: 6px;
-            background-color: #e8e8e8;
-            border-radius: 3px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-        .progress {
-            height: 100%;
-            background-color: #1890ff;
-            width: 0%;
-            transition: width 0.3s;
         }
         .option-feedback {
             position: absolute;
@@ -127,28 +126,46 @@
         .wrong-feedback {
             color: #ff4d4f;
         }
+        .correct-answer-marker {
+            color: #52c41a;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+      a {
+      display: inline-block; /* 使其可设置宽高、内外边距等样式 */
+      background-color: #007BFF; /* 蓝色背景色 */
+      color: white; /* 白色文字 */
+      padding: 10px 20px; /* 内边距，调整链接大小 */
+      text-decoration: none; /* 去掉默认下划线 */
+      border-radius: 5px; /* 圆角 */
+    }
+
+    a:hover {
+      background-color: #0056b3; /* 鼠标悬停时背景色变深 */
+    }
     </style>
 </head>
 <body>
-    <div class="progress-bar">
-        <div class="progress" id="progress"></div>
-    </div>
-    
     <div class="quiz-container">
-        <div class="question-number">
-            <span id="question-number">第1题/共4题</span>
-            <button class="restart-btn" id="restart-btn" style="display: none;">重新答题</button>
+        <div class="question-header">
+            <div class="question-number" id="question-number">第1题/共4题</div>
+            <button class="restart-btn" id="restart-btn">重新答题</button>
+            <a href="wrong.html">查看错题集</a>
+            
         </div>
         <div class="question" id="question"></div>
         
         <div class="options" id="options">
-            <!-- 选项将通过JavaScript动态生成 -->
+            <!-- 选项动态生成 -->
         </div>
         
+        <button class="add-wrong-btn" id="add-wrong-btn">加入错题集</button>
+        
         <div class="controls">
-            <button class="nav-btn prev-btn" id="prev-btn" disabled>上一题</button>
-            <button class="nav-btn next-btn" id="next-btn">下一题</button>
-            <button class="finish-btn" id="finish-btn" style="display: none;">完成所有答题</button>
+            <div class="nav-buttons">
+                <button class="nav-btn prev-btn" id="prev-btn" disabled>上一题</button>
+                <button class="nav-btn next-btn" id="next-btn" disabled>下一题</button>
+            </div>
         </div>
     </div>
 
@@ -158,6 +175,7 @@
         // 题库数据
         const questionBank = [
             {
+                id: 1,
                 question: "毛泽东思想形成的时代条件是（ ）",
                 options: [
                     "A. 中国沦为半殖民地半封建社会",
@@ -168,6 +186,7 @@
                 correctAnswer: "B"
             },
             {
+                id: 2,
                 question: "在中国共产党的历史上第一次提出毛泽东思想这个概念的是（ ）",
                 options: [
                     "A. 刘少奇",
@@ -178,6 +197,7 @@
                 correctAnswer: "D"
             },
             {
+                id: 3,
                 question: "中国工人阶级以独立的姿态登上政治舞台是在（ ）",
                 options: [
                     "A. 辛亥革命中",
@@ -188,6 +208,7 @@
                 correctAnswer: "C"
             },
             {
+                id: 4,
                 question: "中国共产党人第一篇反对教条主义的重要文献是（ ）",
                 options: [
                     "A. 《中国的红色政权为什么能够存在？》",
@@ -199,128 +220,103 @@
             }
         ];
 
-        // DOM元素
-        const questionElement = document.getElementById('question');
-        const optionsElement = document.getElementById('options');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const finishBtn = document.getElementById('finish-btn');
-        const restartBtn = document.getElementById('restart-btn');
-        const questionNumberElement = document.getElementById('question-number');
-        const scoreDisplayElement = document.getElementById('score-display');
-        const progressElement = document.getElementById('progress');
-        
-        // 状态变量
+        // 系统状态
         let currentQuestionIndex = 0;
         let userAnswers = Array(questionBank.length).fill(null);
         let score = 0;
         let answeredCount = 0;
 
+        // DOM元素
+        const questionElement = document.getElementById('question');
+        const optionsElement = document.getElementById('options');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const addWrongBtn = document.getElementById('add-wrong-btn');
+        const questionNumberElement = document.getElementById('question-number');
+        const scoreDisplayElement = document.getElementById('score-display');
+
         // 初始化
         loadQuestion(currentQuestionIndex);
-        updateProgress();
         updateScoreDisplay();
 
         // 加载题目
         function loadQuestion(index) {
             const question = questionBank[index];
             questionElement.textContent = question.question;
-            
-            // 清空选项
             optionsElement.innerHTML = '';
-            
-            // 添加新选项
+            addWrongBtn.style.display = 'none';
+            addWrongBtn.disabled = false;
+            addWrongBtn.textContent = '加入错题集';
+            addWrongBtn.style.backgroundColor = '#ffa940';
+
             question.options.forEach(option => {
                 const optionElement = document.createElement('div');
                 optionElement.className = 'option';
                 optionElement.textContent = option;
                 optionElement.dataset.value = option.charAt(0);
-                
-                // 如果已回答过，显示状态
-                if (userAnswers[index] !== null && userAnswers[index] === option.charAt(0)) {
+
+                // 显示历史回答状态
+                if (userAnswers[index] === option.charAt(0)) {
                     const isCorrect = userAnswers[index] === question.correctAnswer;
                     optionElement.classList.add('selected', isCorrect ? 'correct' : 'wrong');
-                    
-                    // 添加反馈标记
-                    const feedback = document.createElement('span');
-                    feedback.className = `option-feedback ${isCorrect ? 'correct-feedback' : 'wrong-feedback'}`;
-                    feedback.textContent = isCorrect ? '✓ 正确' : '✗ 错误';
-                    optionElement.appendChild(feedback);
+                    if (!isCorrect) addWrongBtn.style.display = 'block';
                 }
-                
+
+                // 显示正确答案
+                if (userAnswers[index] !== null && option.charAt(0) === question.correctAnswer) {
+                    optionElement.innerHTML += '<span class="correct-answer-marker">✓ 正确答案</span>';
+                    optionElement.classList.add('correct-answer');
+                }
+
                 optionElement.addEventListener('click', () => selectOption(optionElement, index));
                 optionsElement.appendChild(optionElement);
             });
-            
-            // 更新题目编号
-            questionNumberElement.textContent = `第${index + 1}题/共${questionBank.length}题`;
-            
-            // 更新导航按钮状态
-            prevBtn.disabled = index === 0;
-            nextBtn.disabled = index === questionBank.length - 1;
-            
-            // 显示/隐藏完成按钮
-            finishBtn.style.display = index === questionBank.length - 1 ? 'block' : 'none';
-            
-            // 显示/隐藏重新答题按钮
-            restartBtn.style.display = index === questionBank.length - 1 ? 'block' : 'none';
+
+            updateNavigation();
         }
 
-        // 选择选项
-        function selectOption(optionElement, questionIndex) {
-            const selectedValue = optionElement.dataset.value;
-            const currentQuestion = questionBank[questionIndex];
+        // 选择答案
+        function selectOption(element, index) {
+            if (userAnswers[index] !== null) return;
             
-            // 如果已经回答过此题，不允许修改
-            if (userAnswers[questionIndex] !== null) return;
+            const selectedValue = element.dataset.value;
+            const isCorrect = selectedValue === questionBank[index].correctAnswer;
             
-            // 记录用户答案
-            userAnswers[questionIndex] = selectedValue;
-            
-            // 更新得分
-            const isCorrect = selectedValue === currentQuestion.correctAnswer;
-            if (isCorrect) {
-                score++;
-            }
+            userAnswers[index] = selectedValue;
+            score += isCorrect ? 1 : 0;
             answeredCount++;
             
-            // 更新UI
-            optionElement.classList.add('selected', isCorrect ? 'correct' : 'wrong');
+            element.classList.add('selected', isCorrect ? 'correct' : 'wrong');
+            if (!isCorrect) addWrongBtn.style.display = 'block';
             
-            // 添加反馈标记
-            const feedback = document.createElement('span');
-            feedback.className = `option-feedback ${isCorrect ? 'correct-feedback' : 'wrong-feedback'}`;
-            feedback.textContent = isCorrect ? '✓ 正确' : '✗ 错误';
-            optionElement.appendChild(feedback);
+            // 显示正确答案
+            document.querySelectorAll(`.option[data-value="${questionBank[index].correctAnswer}"]`)
+                .forEach(opt => {
+                    opt.classList.add('correct-answer');
+                    opt.innerHTML += '<span class="correct-answer-marker">✓ 正确答案</span>';
+                });
             
-            // 禁用其他选项
-            document.querySelectorAll('.option').forEach(opt => {
-                if (opt !== optionElement) {
-                    opt.style.cursor = 'default';
-                }
-            });
-            
-            // 更新统计信息
+            updateNavigation();
             updateScoreDisplay();
-            updateProgress();
-            
-            // 自动跳转到下一题（如果不是最后一题）
-            if (questionIndex < questionBank.length - 1) {
-                setTimeout(() => {
-                    currentQuestionIndex++;
-                    loadQuestion(currentQuestionIndex);
-                }, 800);
-            }
         }
 
-        // 上下题切换
+        // 更新导航状态
+        function updateNavigation() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === questionBank.length - 1 || 
+                            userAnswers[currentQuestionIndex] === null;
+            questionNumberElement.textContent = `第${currentQuestionIndex + 1}题/共${questionBank.length}题`;
+        }
+
+        // 导航控制
         prevBtn.addEventListener('click', () => {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
                 loadQuestion(currentQuestionIndex);
             }
         });
-        
+
         nextBtn.addEventListener('click', () => {
             if (currentQuestionIndex < questionBank.length - 1) {
                 currentQuestionIndex++;
@@ -328,36 +324,40 @@
             }
         });
 
-        // 完成所有答题
-        finishBtn.addEventListener('click', () => {
-            currentQuestionIndex = 0;
-            loadQuestion(currentQuestionIndex);
-        });
-
         // 重新答题
         restartBtn.addEventListener('click', () => {
-            // 重置所有状态
-            userAnswers = Array(questionBank.length).fill(null);
-            score = 0;
-            answeredCount = 0;
-            currentQuestionIndex = 0;
-            
-            // 重新加载第一题
-            loadQuestion(currentQuestionIndex);
-            updateScoreDisplay();
-            updateProgress();
+            if (confirm('确定要重新开始吗？当前进度将丢失！')) {
+                userAnswers = Array(questionBank.length).fill(null);
+                score = answeredCount = 0;
+                currentQuestionIndex = 0;
+                loadQuestion(0);
+                updateScoreDisplay();
+            }
         });
 
-        // 更新得分显示
-        function updateScoreDisplay() {
-            const accuracy = answeredCount > 0 ? Math.round((score / answeredCount) * 100) : 0;
-            scoreDisplayElement.textContent = `得分: ${score}/${answeredCount} (正确率: ${accuracy}%)`;
-        }
+        // 加入错题集
+        addWrongBtn.addEventListener('click', () => {
+            const question = questionBank[currentQuestionIndex];
+            const wrongList = JSON.parse(localStorage.getItem('wrongQuestions') || []);
+            
+            // 防止重复添加
+            if (!wrongList.some(q => q.id === question.id)) {
+                question.wrongTime = new Date().toISOString();
+                wrongList.push(question);
+                localStorage.setItem('wrongQuestions', JSON.stringify(wrongList));
+                alert('已加入错题集');
+                addWrongBtn.textContent = '已添加';
+                addWrongBtn.disabled = true;
+                window.open('wrong.html', '_blank');
+            } else {
+                alert('此题已在错题集中');
+            }
+        });
 
-        // 更新进度条
-        function updateProgress() {
-            const progress = (answeredCount / questionBank.length) * 100;
-            progressElement.style.width = `${progress}%`;
+        // 更新分数显示
+        function updateScoreDisplay() {
+            const accuracy = answeredCount > 0 ? (score / answeredCount * 100).toFixed(1) : 0;
+            scoreDisplayElement.textContent = `得分: ${score}/${answeredCount} (正确率: ${accuracy}%)`;
         }
     </script>
 </body>
