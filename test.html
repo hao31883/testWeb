@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>毛泽东思想题库测试</title>
+    <title>答题系统</title>
     <style>
         body {
             font-family: 'Microsoft YaHei', sans-serif;
@@ -98,17 +98,6 @@
         .restart-btn:hover {
             background-color: #ff7875;
         }
-        .add-wrong-btn {
-            background-color: #ffa940;
-            color: white;
-            position: absolute;
-            right: 15px;
-            bottom: 15px;
-            display: none;
-        }
-        .add-wrong-btn:hover {
-            background-color: #ffc069;
-        }
         .score-display {
             text-align: center;
             margin-top: 20px;
@@ -131,18 +120,6 @@
             font-weight: bold;
             margin-left: 5px;
         }
-      a {
-      display: inline-block; /* 使其可设置宽高、内外边距等样式 */
-      background-color: #007BFF; /* 蓝色背景色 */
-      color: white; /* 白色文字 */
-      padding: 10px 20px; /* 内边距，调整链接大小 */
-      text-decoration: none; /* 去掉默认下划线 */
-      border-radius: 5px; /* 圆角 */
-    }
-
-    a:hover {
-      background-color: #0056b3; /* 鼠标悬停时背景色变深 */
-    }
     </style>
 </head>
 <body>
@@ -150,16 +127,12 @@
         <div class="question-header">
             <div class="question-number" id="question-number">第1题/共4题</div>
             <button class="restart-btn" id="restart-btn">重新答题</button>
-            <a href="wrong.html">查看错题集</a>
-            
         </div>
         <div class="question" id="question"></div>
         
         <div class="options" id="options">
-            <!-- 选项动态生成 -->
+            <!-- 选项将通过JavaScript动态生成 -->
         </div>
-        
-        <button class="add-wrong-btn" id="add-wrong-btn">加入错题集</button>
         
         <div class="controls">
             <div class="nav-buttons">
@@ -220,21 +193,20 @@
             }
         ];
 
-        // 系统状态
-        let currentQuestionIndex = 0;
-        let userAnswers = Array(questionBank.length).fill(null);
-        let score = 0;
-        let answeredCount = 0;
-
         // DOM元素
         const questionElement = document.getElementById('question');
         const optionsElement = document.getElementById('options');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
         const restartBtn = document.getElementById('restart-btn');
-        const addWrongBtn = document.getElementById('add-wrong-btn');
         const questionNumberElement = document.getElementById('question-number');
         const scoreDisplayElement = document.getElementById('score-display');
+        
+        // 状态变量
+        let currentQuestionIndex = 0;
+        let userAnswers = Array(questionBank.length).fill(null);
+        let score = 0;
+        let answeredCount = 0;
 
         // 初始化
         loadQuestion(currentQuestionIndex);
@@ -244,79 +216,100 @@
         function loadQuestion(index) {
             const question = questionBank[index];
             questionElement.textContent = question.question;
+            
+            // 清空选项
             optionsElement.innerHTML = '';
-            addWrongBtn.style.display = 'none';
-            addWrongBtn.disabled = false;
-            addWrongBtn.textContent = '加入错题集';
-            addWrongBtn.style.backgroundColor = '#ffa940';
-
+            
+            // 添加新选项
             question.options.forEach(option => {
                 const optionElement = document.createElement('div');
                 optionElement.className = 'option';
                 optionElement.textContent = option;
                 optionElement.dataset.value = option.charAt(0);
-
-                // 显示历史回答状态
-                if (userAnswers[index] === option.charAt(0)) {
+                
+                // 如果已回答过，显示状态
+                if (userAnswers[index] !== null && userAnswers[index] === option.charAt(0)) {
                     const isCorrect = userAnswers[index] === question.correctAnswer;
                     optionElement.classList.add('selected', isCorrect ? 'correct' : 'wrong');
-                    if (!isCorrect) addWrongBtn.style.display = 'block';
+                    
+                    // 添加反馈标记
+                    const feedback = document.createElement('span');
+                    feedback.className = `option-feedback ${isCorrect ? 'correct-feedback' : 'wrong-feedback'}`;
+                    feedback.textContent = isCorrect ? '✓ 正确' : '✗ 错误';
+                    optionElement.appendChild(feedback);
                 }
-
-                // 显示正确答案
+                
+                // 标记正确答案（如果已回答过）
                 if (userAnswers[index] !== null && option.charAt(0) === question.correctAnswer) {
-                    optionElement.innerHTML += '<span class="correct-answer-marker">✓ 正确答案</span>';
+                    const marker = document.createElement('span');
+                    marker.className = 'correct-answer-marker';
+                    marker.textContent = '✓ 正确答案';
+                    optionElement.appendChild(marker);
                     optionElement.classList.add('correct-answer');
                 }
-
+                
                 optionElement.addEventListener('click', () => selectOption(optionElement, index));
                 optionsElement.appendChild(optionElement);
             });
-
-            updateNavigation();
+            
+            // 更新题目编号和按钮状态
+            questionNumberElement.textContent = `第${index + 1}题/共${questionBank.length}题`;
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === questionBank.length - 1 || userAnswers[index] === null;
         }
 
-        // 选择答案
-        function selectOption(element, index) {
-            if (userAnswers[index] !== null) return;
+        // 选择选项
+        function selectOption(optionElement, questionIndex) {
+            const selectedValue = optionElement.dataset.value;
+            const currentQuestion = questionBank[questionIndex];
             
-            const selectedValue = element.dataset.value;
-            const isCorrect = selectedValue === questionBank[index].correctAnswer;
+            // 如果已经回答过此题，不允许修改
+            if (userAnswers[questionIndex] !== null) return;
             
-            userAnswers[index] = selectedValue;
-            score += isCorrect ? 1 : 0;
+            // 记录用户答案
+            userAnswers[questionIndex] = selectedValue;
+            
+            // 更新得分
+            const isCorrect = selectedValue === currentQuestion.correctAnswer;
+            if (isCorrect) {
+                score++;
+            }
             answeredCount++;
             
-            element.classList.add('selected', isCorrect ? 'correct' : 'wrong');
-            if (!isCorrect) addWrongBtn.style.display = 'block';
+            // 更新UI
+            optionElement.classList.add('selected', isCorrect ? 'correct' : 'wrong');
+            
+            // 添加反馈标记
+            const feedback = document.createElement('span');
+            feedback.className = `option-feedback ${isCorrect ? 'correct-feedback' : 'wrong-feedback'}`;
+            feedback.textContent = isCorrect ? '✓ 正确' : '✗ 错误';
+            optionElement.appendChild(feedback);
             
             // 显示正确答案
-            document.querySelectorAll(`.option[data-value="${questionBank[index].correctAnswer}"]`)
-                .forEach(opt => {
+            document.querySelectorAll('.option').forEach(opt => {
+                if (opt.dataset.value === currentQuestion.correctAnswer) {
+                    const marker = document.createElement('span');
+                    marker.className = 'correct-answer-marker';
+                    marker.textContent = '✓ 正确答案';
+                    opt.appendChild(marker);
                     opt.classList.add('correct-answer');
-                    opt.innerHTML += '<span class="correct-answer-marker">✓ 正确答案</span>';
-                });
+                }
+                opt.style.cursor = 'default';
+            });
             
-            updateNavigation();
+            // 更新统计信息和按钮状态
             updateScoreDisplay();
+            nextBtn.disabled = false;
         }
 
-        // 更新导航状态
-        function updateNavigation() {
-            prevBtn.disabled = currentQuestionIndex === 0;
-            nextBtn.disabled = currentQuestionIndex === questionBank.length - 1 || 
-                            userAnswers[currentQuestionIndex] === null;
-            questionNumberElement.textContent = `第${currentQuestionIndex + 1}题/共${questionBank.length}题`;
-        }
-
-        // 导航控制
+        // 上下题切换
         prevBtn.addEventListener('click', () => {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
                 loadQuestion(currentQuestionIndex);
             }
         });
-
+        
         nextBtn.addEventListener('click', () => {
             if (currentQuestionIndex < questionBank.length - 1) {
                 currentQuestionIndex++;
@@ -326,37 +319,22 @@
 
         // 重新答题
         restartBtn.addEventListener('click', () => {
-            if (confirm('确定要重新开始吗？当前进度将丢失！')) {
+            if (confirm('确定要重新开始答题吗？这将清空当前答题记录。')) {
+                // 重置所有状态
                 userAnswers = Array(questionBank.length).fill(null);
-                score = answeredCount = 0;
+                score = 0;
+                answeredCount = 0;
                 currentQuestionIndex = 0;
-                loadQuestion(0);
+                
+                // 重新加载第一题
+                loadQuestion(currentQuestionIndex);
                 updateScoreDisplay();
             }
         });
 
-        // 加入错题集
-        addWrongBtn.addEventListener('click', () => {
-            const question = questionBank[currentQuestionIndex];
-            const wrongList = JSON.parse(localStorage.getItem('wrongQuestions') || []);
-            
-            // 防止重复添加
-            if (!wrongList.some(q => q.id === question.id)) {
-                question.wrongTime = new Date().toISOString();
-                wrongList.push(question);
-                localStorage.setItem('wrongQuestions', JSON.stringify(wrongList));
-                alert('已加入错题集');
-                addWrongBtn.textContent = '已添加';
-                addWrongBtn.disabled = true;
-                window.open('wrong.html', '_blank');
-            } else {
-                alert('此题已在错题集中');
-            }
-        });
-
-        // 更新分数显示
+        // 更新得分显示
         function updateScoreDisplay() {
-            const accuracy = answeredCount > 0 ? (score / answeredCount * 100).toFixed(1) : 0;
+            const accuracy = answeredCount > 0 ? Math.round((score / answeredCount) * 100) : 0;
             scoreDisplayElement.textContent = `得分: ${score}/${answeredCount} (正确率: ${accuracy}%)`;
         }
     </script>
